@@ -1,4 +1,4 @@
-// Provider-agnostic scoring types. Every AI provider (Anthropic, Gemini, ...)
+// Provider-agnostic scoring types. Every AI provider (Anthropic, Gemini, LM Studio, ...)
 // implements ScoringProvider and returns raw JSON text matching SCORING_SCHEMA
 // (see ./schema.ts) — parsing/validation/clamping happens once in ./index.ts.
 

@@ -21,7 +21,7 @@ Code is MIT licensed. Content (prompts, questions) is CC-BY-SA, versioned separa
 - **UI**: React, Tailwind
 - **Content data**: static JSON files under `/content`, no database
 - **User data**: Prisma + SQLite in dev / Postgres in production
-- **Writing scoring**: pluggable AI provider (`src/lib/ai`), selected via `AI_PROVIDER` env var (`anthropic` | `gemini` | `ollama` | `openai`), each sending the same explicit scoring rubric and returning structured JSON. `ollama` runs fully locally (no API key, no data leaves the machine) for users who prefer not to send submissions to a third-party API.
+- **Writing scoring**: pluggable AI provider (`src/lib/ai`), selected via `AI_PROVIDER` env var (`anthropic` | `gemini` | `lmstudio` | `ollama` | `openai`), each sending the same explicit scoring rubric and returning structured JSON. `ollama` and `lmstudio` run fully locally (no API key, no data leaves the machine) for users who prefer not to send submissions to a third-party API. `lmstudio` talks to LM Studio's OpenAI-compatible server (`lms server start`, default `http://localhost:1234/v1`).
 
 ## Data architecture
 
