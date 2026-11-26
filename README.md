@@ -38,8 +38,8 @@ structure of the real exams as closely as possible, and estimating a level
 
 ## Quick Start
 
-Requires Node.js 20+ and Python 3.10+ (only needed if you want listening
-audio — see below).
+Requires Node.js 20+ and Python 3.10+ (only needed to run the listening-audio
+script — see below). OmniVoice itself is a separate C++ binary.
 
 ```bash
 git clone <this-repo-url>
@@ -54,9 +54,10 @@ whichever's easiest for you:
 - Already have a Claude, Gemini, or ChatGPT API key? Set `AI_PROVIDER` to
   `anthropic`, `gemini`, or `openai` and paste the key.
 - Prefer not to send anything to a third party, or want it to work offline?
-  Set `AI_PROVIDER="ollama"` and install [Ollama](https://ollama.com) — no
-  key needed. See the [provider table](#choosing-an-ai-provider) below for
-  exact env vars.
+  Set `AI_PROVIDER="ollama"` and install [Ollama](https://ollama.com), or
+  set `AI_PROVIDER="lmstudio"` and run a model in [LM Studio](https://lmstudio.ai)'s
+  local server — no key needed. See the [provider table](#choosing-an-ai-provider)
+  below for exact env vars.
 
 Then:
 
@@ -97,15 +98,23 @@ nothing else to clean up (SQLite is a local file, no background services).
 
 Listening dialogues are scripted in `content/{tef,tcf}/comprehension_orale/questions.json`
 (who says what, in which voice) but the `.wav` files themselves are **not**
-committed — they're generated locally with
-[pocket-tts](https://github.com/kyutai-labs/pocket-tts), a small CPU-only
-text-to-speech model, so the repo stays light and every learner gets freshly
-synthesized (but deterministic-content) audio.
+committed. They're generated locally with
+[OmniVoice Q8](https://huggingface.co/Serveurperso/OmniVoice-GGUF) through
+[omnivoice.cpp](https://github.com/ServeurpersoCom/omnivoice.cpp). The weights
+are CC-BY-NC and stay on your machine. LM Studio can hold the two GGUF files;
+speech itself is synthesized by `omnivoice-tts`, not by LM Studio's chat server.
 
 ```bash
-python3 -m venv .venv && source .venv/bin/activate   # optional but recommended
-pip install pocket-tts scipy
-npm run generate:audio            # generates for both TEF and TCF
+# Runtime, once. On Apple Silicon, pass -DGGML_METAL=ON to cmake.
+git clone --recurse-submodules https://github.com/ServeurpersoCom/omnivoice.cpp.git
+cd omnivoice.cpp && cmake -S . -B build -DGGML_METAL=ON && cmake --build build --config Release
+export OMNIVOICE_BIN="$PWD/build/omnivoice-tts"   # or copy the binary and its dylibs together
+
+# Weights, into LM Studio (or set OMNIVOICE_MODEL and OMNIVOICE_CODEC yourself)
+lms import omnivoice-base-Q8_0.gguf --user-repo Serveurperso/OmniVoice-GGUF --copy -y
+lms import omnivoice-tokenizer-Q8_0.gguf --user-repo Serveurperso/OmniVoice-GGUF --copy -y
+
+npm run generate:audio                 # both TEF and TCF
 npm run generate:audio -- --exam tef   # or just one exam
 npm run generate:audio -- --force      # regenerate even if files exist
 ```
@@ -117,7 +126,7 @@ you generate the audio.
 ## Stack
 
 Next.js (App Router) · TypeScript · Tailwind · Prisma (SQLite in dev,
-Postgres in production) · pluggable AI scoring · pocket-tts (local, on-demand
+Postgres in production) · pluggable AI scoring · OmniVoice Q8 (local, on-demand
 listening audio)
 
 ## Choosing an AI provider
@@ -130,6 +139,7 @@ Scoring goes through a pluggable provider (`src/lib/ai`), picked via the
 | `anthropic` (default) | `ANTHROPIC_API_KEY` | Get a key at [console.anthropic.com](https://console.anthropic.com/). `ANTHROPIC_SCORING_MODEL` optional, defaults to `claude-opus-4-8` |
 | `gemini` | `GEMINI_API_KEY` | Free tier via [Google AI Studio](https://aistudio.google.com/apikey). `GEMINI_SCORING_MODEL` optional, defaults to `gemini-flash-latest` (an auto-updating alias, since Google retires dated model names quickly) |
 | `openai` | `OPENAI_API_KEY` | Get a key at [platform.openai.com](https://platform.openai.com/api-keys). `OPENAI_SCORING_MODEL` optional, defaults to `gpt-5` |
+| `lmstudio` | A running [LM Studio](https://lmstudio.ai) local server | No API key, runs fully locally/offline. Start the server with `lms server start`, load a model with `lms load <model>` (`lms ls` lists what is already installed). `LMSTUDIO_BASE_URL` optional, defaults to `http://localhost:1234/v1`. `LMSTUDIO_SCORING_MODEL` is the model key from `lms ls` |
 | `ollama` | A running [Ollama](https://ollama.com) instance | No API key, runs fully locally/offline. `OLLAMA_BASE_URL` optional, defaults to `http://localhost:11434`. `OLLAMA_SCORING_MODEL` optional, defaults to `llama3.1` — pull it first with `ollama pull llama3.1`. Use a model that supports structured JSON output for reliable scoring |
 
 Adding another provider means implementing the small `ScoringProvider`

@@ -26,6 +26,8 @@ export default function TaskPage() {
   const [deadlineAt, setDeadlineAt] = useState<number | null>(null);
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
   const viewRef = useRef<TaskViewHandle>(null);
+  const stateRef = useRef(state);
+  stateRef.current = state;
 
   // Block browser back navigation — the real exam never allows going back.
   useEffect(() => {
@@ -77,29 +79,26 @@ export default function TaskPage() {
   }, [attemptId, sectionId, order, router]);
 
   function handleSubmitted(taskId: string, result: SubmitResult) {
-    setState((current) => {
-      if (!current) return current;
-      const updated: AttemptState = {
-        ...current,
-        completedTaskIds: [...current.completedTaskIds, taskId],
-      };
+    const current = stateRef.current;
+    if (!current) return;
 
-      if (result.nextSection) {
-        const advanced = advanceToSection(updated, result.nextSection);
-        saveAttemptState(advanced);
-        router.push(`/attempt/${attemptId}/section/${result.nextSection.sectionId}/task/1`);
-        return advanced;
-      }
+    let next: AttemptState = {
+      ...current,
+      completedTaskIds: [...current.completedTaskIds, taskId],
+    };
+    let href: string;
+    if (result.nextSection) {
+      next = advanceToSection(next, result.nextSection);
+      href = `/attempt/${attemptId}/section/${result.nextSection.sectionId}/task/1`;
+    } else if (result.sectionFinished) {
+      href = `/attempt/${attemptId}/results`;
+    } else {
+      href = `/attempt/${attemptId}/section/${sectionId}/task/${next.completedTaskIds.length + 1}`;
+    }
 
-      saveAttemptState(updated);
-      if (result.sectionFinished) {
-        router.push(`/attempt/${attemptId}/results`);
-      } else {
-        const nextOrder = updated.completedTaskIds.length + 1;
-        router.push(`/attempt/${attemptId}/section/${sectionId}/task/${nextOrder}`);
-      }
-      return updated;
-    });
+    saveAttemptState(next);
+    setState(next);
+    router.push(href);
   }
 
   const submitRef = useRef<() => void>(() => {});
