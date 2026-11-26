@@ -38,8 +38,8 @@ structure of the real exams as closely as possible, and estimating a level
 
 ## Quick Start
 
-Requires Node.js 20+ and Python 3.10+ (only needed if you want listening
-audio — see below).
+Requires Node.js 20+ and Python 3.10+ (only needed to run the listening-audio
+script — see below). OmniVoice itself is a separate C++ binary.
 
 ```bash
 git clone <this-repo-url>
@@ -98,15 +98,23 @@ nothing else to clean up (SQLite is a local file, no background services).
 
 Listening dialogues are scripted in `content/{tef,tcf}/comprehension_orale/questions.json`
 (who says what, in which voice) but the `.wav` files themselves are **not**
-committed — they're generated locally with
-[pocket-tts](https://github.com/kyutai-labs/pocket-tts), a small CPU-only
-text-to-speech model, so the repo stays light and every learner gets freshly
-synthesized (but deterministic-content) audio.
+committed. They're generated locally with
+[OmniVoice Q8](https://huggingface.co/Serveurperso/OmniVoice-GGUF) through
+[omnivoice.cpp](https://github.com/ServeurpersoCom/omnivoice.cpp). The weights
+are CC-BY-NC and stay on your machine. LM Studio can hold the two GGUF files;
+speech itself is synthesized by `omnivoice-tts`, not by LM Studio's chat server.
 
 ```bash
-python3 -m venv .venv && source .venv/bin/activate   # optional but recommended
-pip install pocket-tts scipy
-npm run generate:audio            # generates for both TEF and TCF
+# Runtime, once. On Apple Silicon, pass -DGGML_METAL=ON to cmake.
+git clone --recurse-submodules https://github.com/ServeurpersoCom/omnivoice.cpp.git
+cd omnivoice.cpp && cmake -S . -B build -DGGML_METAL=ON && cmake --build build --config Release
+export OMNIVOICE_BIN="$PWD/build/omnivoice-tts"   # or copy the binary and its dylibs together
+
+# Weights, into LM Studio (or set OMNIVOICE_MODEL and OMNIVOICE_CODEC yourself)
+lms import omnivoice-base-Q8_0.gguf --user-repo Serveurperso/OmniVoice-GGUF --copy -y
+lms import omnivoice-tokenizer-Q8_0.gguf --user-repo Serveurperso/OmniVoice-GGUF --copy -y
+
+npm run generate:audio                 # both TEF and TCF
 npm run generate:audio -- --exam tef   # or just one exam
 npm run generate:audio -- --force      # regenerate even if files exist
 ```
@@ -118,7 +126,7 @@ you generate the audio.
 ## Stack
 
 Next.js (App Router) · TypeScript · Tailwind · Prisma (SQLite in dev,
-Postgres in production) · pluggable AI scoring · pocket-tts (local, on-demand
+Postgres in production) · pluggable AI scoring · OmniVoice Q8 (local, on-demand
 listening audio)
 
 ## Choosing an AI provider

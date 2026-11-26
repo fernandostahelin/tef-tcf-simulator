@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { ExamAudio } from "@/components/ExamAudio";
 
 interface WritingScoringResult {
   linguistic: number;
@@ -127,9 +128,7 @@ export default function ResultsPage() {
                     </span>
                   </div>
                   {s.stimulusContent && (
-                    <audio controls src={s.stimulusContent} className="mt-3 w-full">
-                      Votre navigateur ne prend pas en charge la lecture audio.
-                    </audio>
+                    <ExamAudio src={s.stimulusContent} className="mt-3 w-full" />
                   )}
                   <p className="mt-3 text-sm text-slate-700">{s.questionText}</p>
                   <ul className="mt-2 space-y-1 text-sm">

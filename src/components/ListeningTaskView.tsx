@@ -3,6 +3,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import type { TaskTemplate } from "@/lib/content-types";
 import { type AttemptState, type PublicMcqQuestion, saveAttemptState } from "@/lib/client-state";
+import { ExamAudio } from "./ExamAudio";
 import type { SubmitResult, TaskViewHandle } from "./task-view-types";
 
 interface ListeningTaskViewProps {
@@ -95,9 +96,7 @@ export const ListeningTaskView = forwardRef<TaskViewHandle, ListeningTaskViewPro
       <>
         <div className="rounded-lg border border-slate-200 bg-white p-4 space-y-3">
           <p className="text-xs text-slate-500">{taskTemplate.instructionsTemplate}</p>
-          <audio controls src={question.stimulusContent} className="w-full">
-            Votre navigateur ne prend pas en charge la lecture audio.
-          </audio>
+          <ExamAudio src={question.stimulusContent} className="w-full" />
           <h2 className="font-medium text-slate-900">{question.questionText}</h2>
         </div>
 

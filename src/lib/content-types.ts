@@ -81,12 +81,12 @@ export interface MCQChoice {
 }
 
 // Authoring-only: the audio generation script (scripts/generate_audio.py) reads
-// this to synthesize each MCQQuestion's dialogue with pocket-tts, one voice per
+// this to synthesize each MCQQuestion's dialogue with OmniVoice, one voice per
 // speaker. Not consumed at runtime — stimulusContent (the resulting audio path)
 // is what the app actually plays.
 export interface DialogueTurn {
   speaker: string; // display label, e.g. "Client"
-  voice: string; // pocket-tts voice id, e.g. "estelle"
+  voice: string; // OmniVoice voice id, e.g. "estelle"
   text: string; // French line
 }
 

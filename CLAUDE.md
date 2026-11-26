@@ -30,7 +30,7 @@ The full data schema lives in [`docs/data-schema.md`](./docs/data-schema.md). Re
 - **Static content** (`ExamDefinition`, `ExamSection`, `TaskTemplate`, `PromptItem`, `MCQQuestion`, `CLBConversionTable`) → `.json` files under `/content/{examType}/{sectionType}/`, versioned in git.
 - **User data** (`User`, `ExamAttempt`, `SectionAttempt`, `TaskSubmission`, `ScoringResult`, `ContentContribution`) → Prisma tables.
 - **Local-only client state** (anonymous user id, per-attempt progress, one-time UI flags like "has seen the onboarding walkthrough") → browser `localStorage`/`sessionStorage` via `src/lib/client-state.ts`, never the DB. This keeps Phase 1 login-free per the "no full user accounts yet" scope below; prefer this pattern over a Prisma migration for anything that's purely a per-browser UX flag.
-- **Listening audio is generated on demand, never committed.** `content/{examType}/comprehension_orale/questions.json` stores each `MCQQuestion`'s `dialogueScript` (who says what, in which voice) as the versioned source of truth. Running `npm run generate:audio` (wraps `scripts/generate_audio.py`, uses [pocket-tts](https://github.com/kyutai-labs/pocket-tts)) synthesizes the actual `.wav` files into `public/audio/`, which is gitignored. The app and its content are fully valid without ever running that script — only playback needs the generated files. Don't commit anything under `public/audio/`.
+- **Listening audio is generated on demand, never committed.** `content/{examType}/comprehension_orale/questions.json` stores each `MCQQuestion`'s `dialogueScript` (who says what, in which voice) as the versioned source of truth. Running `npm run generate:audio` (wraps `scripts/generate_audio.py`) synthesizes the `.wav` files with OmniVoice Q8 via `omnivoice-tts` into `public/audio/`, which is gitignored. The Q8 GGUFs are CC-BY-NC and are not committed; LM Studio can store them, but it does not run the synthesis. The app and its content are fully valid without ever running that script — only playback needs the generated files. Don't commit anything under `public/audio/`.
 
 ### Combined multi-section exam attempt
 
@@ -60,7 +60,7 @@ Build **only** the writing section, for both exams, with:
 ## Phase 2 scope (listening comprehension)
 
 - [x] `listening_mcq` task type + `MCQQuestion`/`DialogueTurn` content types
-- [x] Original `comprehension_orale` content (6 questions each, TEF + TCF), audio generated on demand via pocket-tts, never committed
+- [x] Original `comprehension_orale` content (6 questions each, TEF + TCF), audio generated on demand via OmniVoice Q8, never committed
 - [x] Combined multi-section exam attempt (listening → writing, back-to-back, matching real exam order)
 - [x] Auto-scored MCQ submissions, per-section + overall NCLC estimates
 - [ ] Reading comprehension (`comprehension_ecrite`) — same MCQ engine, no audio, natural fast-follow
